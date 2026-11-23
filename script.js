@@ -69,7 +69,7 @@ function matrixFor(q, w, h) {       // flat w x h box -> quad, as CSS matrix3d
   const g = (sx * dy2 - dx2 * sy) / den, k = (dx1 * sy - sx * dy1) / den;
   const a = x1 - x0 + g * x1, b = x3 - x0 + k * x3;
   const d = y1 - y0 + g * y1, e = y3 - y0 + k * y3;
-  return matrix3d(,,0,,,,0,,0,0,1,0,,,0,1);
+  return `matrix3d(${a/w},${d/w},0,${g/w},${b/h},${e/h},0,${k/h},0,0,1,0,${x0},${y0},0,1)`;
 }
 
 /* ---- Cards ----
@@ -149,10 +149,10 @@ function render() {
     const q = uprightBlend(pathQuad(u), w);
     const blur = cur.blur * (lite ? BLUR_MAX * 0.6 : BLUR_MAX) * (1 - t * t * (3 - 2 * t));   // sharp in the middle, softer the further from it (lighter on phones)
     c.style.transform = matrixFor(shift(q, 0, 0, s * (1 + 0.07 * w)), size[c._i].w, size[c._i].h);
-    c.style.filter = rightness() saturate()  +
-      (lite ? drop-shadow(0 px px rgba(0,0,0,))    // smaller, cheaper shadow on phones
-            : drop-shadow(0 px px rgba(0,0,0,))) +
-      (blur > 0.02 ?  blur(px) : '');
+    c.style.filter = `brightness(${(1 - 0.18 * dim).toFixed(3)}) saturate(${(1 - 0.35 * dim).toFixed(3)}) ` +
+      (lite ? `drop-shadow(0 ${(6 + 12 * w).toFixed(2)}px ${(8 + 14 * w).toFixed(2)}px rgba(0,0,0,${(0.16 + 0.1 * w).toFixed(3)}))`    // smaller, cheaper shadow on phones
+            : `drop-shadow(0 ${(10 + 20 * w).toFixed(2)}px ${(12 + 24 * w).toFixed(2)}px rgba(0,0,0,${(0.16 + 0.12 * w).toFixed(3)}))`) +
+      (blur > 0.02 ? ` blur(${blur.toFixed(2)}px)` : '');
     // Stacking: the reference order (outer cards over inner ones, by distance from the middle) plus a big
     // bonus for the card that owns the spotlight, so it stays on top of both neighbours. The bonus is centred
     // a little past the middle and fades out over a bit more than one card spacing, which puts every
@@ -271,3 +271,4 @@ setMode(mode, false);
 
 render();
 requestAnimationFrame(frame);
+

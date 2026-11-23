@@ -97,9 +97,9 @@
    for the copy/snippet and the mobile-preview iframe. */
 (() => {
   const $ = id => document.getElementById(id);
-  const panel = panel, countIn = count, sizeIn = size, spotIn = spot, blurIn = blur, countOut = countOut, sizeOut = sizeOut, spotOut = spotOut, blurOut = blurOut;
-  const codeEl = code, codeSize = codeSize, copyBtns = [...document.querySelectorAll('.copy-btn')], fold = fold, codeToggle = codeToggle;
-  const frame = phoneFrame, phone = phone, phoneBox = phoneBox, viewBtns = [...document.querySelectorAll('[data-view]')];
+  const panel = $('panel'), countIn = $('count'), sizeIn = $('size'), spotIn = $('spot'), blurIn = $('blur'), countOut = $('countOut'), sizeOut = $('sizeOut'), spotOut = $('spotOut'), blurOut = $('blurOut');
+  const codeEl = $('code'), codeSize = $('codeSize'), copyBtns = [...document.querySelectorAll('.copy-btn')], fold = $('fold'), codeToggle = $('codeToggle');
+  const frame = $('phoneFrame'), phone = $('phone'), phoneBox = $('phoneBox'), viewBtns = [...document.querySelectorAll('[data-view]')];
   const src = window.__heroSrc;
   let mobileView = false, reloadTimer;
   let cssSource = '', jsSource = '', sourcesReady = false;
@@ -224,3 +224,5 @@
 </script>
 </body>
 </html>
+
+

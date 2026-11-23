@@ -1,3 +1,11 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>Floating Card Hero</title>
+<style id="hero-css">
 /* The composition lives on a fixed 1645 x 956 stage (the reference image's size)
    and is scaled to cover the hero, so every card keeps its exact position. */
 :root { --bg: #fff; --stage-w: 1645; --stage-h: 1055; --rim: 7px; --radius: 32px; }
@@ -52,113 +60,66 @@ html, body { height: 100%; margin: 0; background: var(--bg); overscroll-behavior
   .mode { bottom: auto; top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); }
   .mode button { padding: 13px 17px; }
 }
+</style<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>Floating Card Hero</title>
+<style id="hero-css">
+/* The composition lives on a fixed 1645 x 956 stage (the reference image's size)
+   and is scaled to cover the hero, so every card keeps its exact position. */
+:root { --bg: #fff; --stage-w: 1645; --stage-h: 1055; --rim: 7px; --radius: 32px; }
+html, body { height: 100%; margin: 0; background: var(--bg); overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
+.hero { touch-action: pan-y; cursor: grab; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; position: relative; height: 100vh; height: 100svh; min-height: 320px; overflow: clip; background: var(--bg); }
+.stage {
+  position: absolute; left: 0; top: 0;
+  width: calc(var(--stage-w) * 1px); height: calc(var(--stage-h) * 1px);
+  transform-origin: 0 0;
+  transform: translate(var(--tx, 0px), var(--ty, 0px)) scale(var(--k, 1));
+}
+/* Each card is a flat w x h box. script.js sets its transform (a matrix3d)
+   every frame to place it on its corners in the stage. */
+.card {
+  position: absolute; left: 0; top: 0; margin: 0;
+  width: var(--w); height: var(--h);
+  box-sizing: border-box; padding: var(--rim);
+  transform-origin: 0 0; will-change: transform; z-index: var(--z);
+  border-radius: var(--radius);
+  background: linear-gradient(160deg, #ffffff 0%, #dedede 48%, #f4f4f4 100%);   /* silver rim */
+  filter: drop-shadow(0 10px 12px rgba(0,0,0,.16));
+}
+.card img {
+  display: block; width: 100%; height: 100%; object-fit: cover;
+  border-radius: calc(var(--radius) - var(--rim));
+  user-select: none; -webkit-user-drag: none;
+}
 
-/* ---- Mobile preview: Samsung Galaxy S26 = 360 x 780 CSS px ---- */
-.view-toggle {
-  position: fixed; z-index: 250; top: max(16px, env(safe-area-inset-top)); right: max(16px, env(safe-area-inset-right));
-  display: flex; padding: 3px; background: #fff; border: 1px solid rgba(20,20,20,.14); border-radius: 999px;
+.hero.is-dragging { cursor: grabbing; }
+/* Spotlight: a faint vignette darkens the edges so the middle of the hero feels lit (strength = --spot, set by script.js) */
+.hero::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse 60% 70% at 50% 50%, rgba(20,20,20,0) 0%, rgba(20,20,20,calc(.09 * var(--spot, 1))) 100%);
+}
+
+/* Animation style toggle */
+.mode {
+  position: fixed; z-index: 200;
+  right: max(16px, env(safe-area-inset-right)); bottom: max(16px, env(safe-area-inset-bottom));
+  display: flex; padding: 3px; background: #fff;
+  border: 1px solid rgba(20,20,20,.14); border-radius: 999px;
   font: 11px/1 "Helvetica Neue", Helvetica, Arial, sans-serif; letter-spacing: .12em; text-transform: uppercase;
 }
-.view-toggle button { all: unset; display: block; cursor: pointer; touch-action: manipulation; padding: 9px 14px; border-radius: 999px; color: #8a8780; transition: background .2s, color .2s; }
-.view-toggle button[aria-pressed="true"] { background: #141414; color: #fff; }
-.view-toggle button:focus-visible { outline: 2px solid #141414; outline-offset: 2px; }
-body.view-mobile .hero, body.view-mobile .mode { display: none; }
-.device-stage {
-  position: fixed; inset: 0; z-index: 100; display: none; flex-direction: column; align-items: center; justify-content: center;
-  box-sizing: border-box; padding: 64px 24px 40px; background: #ebeae6; overflow: hidden;
+.mode button {
+  all: unset; display: block; cursor: pointer; touch-action: manipulation;
+  padding: 9px 14px; border-radius: 999px; color: #8a8780; transition: background .2s, color .2s;
 }
-body.view-mobile .device-stage { display: flex; }
-@media (min-width: 900px) { .device-stage { padding-left: 440px; } }
-.phone-box { position: relative; flex: none; }
-.phone {
-  position: absolute; left: 0; top: 0; width: 380px; height: 800px; box-sizing: border-box; padding: 10px;
-  background: #111; border-radius: 54px; transform-origin: 0 0;
-  box-shadow: 0 0 0 1px #3a3a3a inset, 0 28px 60px rgba(0,0,0,.22);
-}
-.phone .side { position: absolute; right: -3px; width: 3px; background: #1d1d1d; border-radius: 0 2px 2px 0; }
-.phone .power { top: 190px; height: 64px; }
-.phone .vol { top: 280px; height: 104px; }
-.screen { position: relative; width: 360px; height: 780px; overflow: hidden; border-radius: 44px; background: #fff; }
-.screen iframe { position: absolute; left: 0; top: 28px; width: 360px; height: 752px; border: 0; display: block; background: #fff; }
-.statusbar {
-  position: absolute; z-index: 2; left: 0; right: 0; top: 0; height: 28px; box-sizing: border-box; padding: 0 28px 0 30px;
-  display: flex; align-items: center; justify-content: space-between; pointer-events: none;
-  font: 600 12px/1 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; letter-spacing: 0; text-transform: none; color: #141414; background: #fff;
-}
-.punch { position: absolute; left: 50%; top: 9px; width: 11px; height: 11px; margin-left: -5.5px; border-radius: 50%; background: #0b0b0b; }
-.gesture { position: absolute; z-index: 2; left: 50%; bottom: 7px; width: 112px; height: 4px; margin-left: -56px; border-radius: 2px; background: rgba(20,20,20,.5); pointer-events: none; }
-.device-note { flex: none; margin: 14px 0 0; max-width: 420px; text-align: center; font: 11px/1.5 "Helvetica Neue", Helvetica, Arial, sans-serif; letter-spacing: .12em; text-transform: uppercase; color: #8a8780; }
-@media (max-width: 560px) { .view-toggle, .device-stage { display: none !important; } }
-
-/* ---- Demo controls (these are not part of the exported code) ---- */
-.panel {
-  position: fixed; z-index: 300; box-sizing: border-box;
-  top: max(16px, env(safe-area-inset-top)); left: max(16px, env(safe-area-inset-left));
-  width: min(390px, calc(100vw - 32px));
-  padding: 14px 16px 16px; background: #fff; color: #141414;
-  border: 1px solid rgba(20,20,20,.14); border-radius: 22px; box-shadow: 0 12px 32px rgba(0,0,0,.08);
-  font: 11px/1 "Helvetica Neue", Helvetica, Arial, sans-serif; letter-spacing: .12em; text-transform: uppercase;
-}
-.panel-head, .row-top, .code-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.panel-head { margin-bottom: 4px; }
-.panel.is-collapsed .panel-head { margin-bottom: 0; }
-.panel.is-collapsed .panel-body { display: none; }
-.panel button {
-  all: unset; cursor: pointer; touch-action: manipulation; box-sizing: border-box;
-  border-radius: 999px; padding: 9px 14px; background: #141414; color: #fff;
-  font: inherit; letter-spacing: inherit; text-transform: inherit; transition: background .2s, color .2s, transform .15s;
-}
-.panel button:active { transform: scale(.97); }
-.panel button:focus-visible { outline: 2px solid #141414; outline-offset: 2px; }
-.panel .fold { padding: 0; width: 30px; height: 30px; display: grid; place-items: center; background: #f1f0ec; color: #141414; font-size: 15px; letter-spacing: 0; }
-.panel .row { display: block; margin-top: 14px; }
-.panel .lab { color: #8a8780; }
-.panel output { font-variant-numeric: tabular-nums; }
-.panel input[type=range] {
-  -webkit-appearance: none; appearance: none; display: block; width: 100%; height: 24px; margin: 4px 0 0;
-  background: transparent; cursor: pointer; --pct: 0%;
-}
-.panel input[type=range]::-webkit-slider-runnable-track { height: 2px; border-radius: 2px; background: linear-gradient(to right, #141414 var(--pct), #dcdad5 var(--pct)); }
-.panel input[type=range]::-moz-range-track { height: 2px; border-radius: 2px; background: #dcdad5; }
-.panel input[type=range]::-moz-range-progress { height: 2px; border-radius: 2px; background: #141414; }
-.panel input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance: none; box-sizing: border-box; width: 18px; height: 18px; margin-top: -8px; border-radius: 50%;
-  background: #141414; border: 3px solid #fff; box-shadow: 0 0 0 1px rgba(20,20,20,.3);
-}
-.panel input[type=range]::-moz-range-thumb { box-sizing: border-box; width: 18px; height: 18px; border-radius: 50%; background: #141414; border: 3px solid #fff; box-shadow: 0 0 0 1px rgba(20,20,20,.3); }
-.panel input[type=range]:focus-visible { outline: 2px solid #141414; outline-offset: 3px; border-radius: 4px; }
-.code-head { margin: 18px 0 8px; }
-.code-head .lab small { font-size: inherit; opacity: .7; }
-.panel textarea {
-  display: block; box-sizing: border-box; width: 100%; height: 190px; margin: 0; padding: 10px 12px; resize: vertical;
-  background: #f6f5f2; color: #2b2b2b; border: 1px solid rgba(20,20,20,.1); border-radius: 14px;
-  font: 11px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; text-transform: none;
-  white-space: pre; overflow: auto; tab-size: 2;
-}
-.panel textarea:focus-visible { outline: 2px solid #141414; outline-offset: 2px; }
-.head-actions { display: flex; align-items: center; gap: 8px; }
-.head-copy, .code-toggle { display: none !important; }
-/* Touch screens: bigger handles and buttons */
-@media (pointer: coarse) {
-  .panel input[type=range] { height: 44px; }
-  .panel input[type=range]::-webkit-slider-runnable-track { height: 4px; }
-  .panel input[type=range]::-moz-range-track, .panel input[type=range]::-moz-range-progress { height: 4px; }
-  .panel input[type=range]::-webkit-slider-thumb { width: 30px; height: 30px; margin-top: -13px; }
-  .panel input[type=range]::-moz-range-thumb { width: 30px; height: 30px; }
-  .panel button { padding: 13px 17px; }
-  .panel .fold { width: 44px; height: 44px; padding: 0; }
-}
-/* Phones: the panel becomes a bottom sheet. It starts folded to one slim bar with Copy always in reach;
-   the code stays hidden until you ask for it. */
+.mode button[aria-pressed="true"] { background: #141414; color: #fff; }
+.mode button:focus-visible { outline: 2px solid #141414; outline-offset: 2px; }
+/* Phones: toggle moves to the top (clear of the browser's bottom bar and your thumb), with bigger tap targets */
 @media (max-width: 560px) {
-  .panel {
-    top: auto; left: 0; right: 0; bottom: 0; width: auto; max-height: 72vh; max-height: 72svh; overflow-y: auto; overscroll-behavior: contain;
-    border-radius: 22px 22px 0 0; border-bottom: 0; font-size: 12px;
-    padding: 10px max(18px, env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
-  }
-  .head-copy { display: inline-block !important; }
-  .code-toggle { display: inline-block !important; background: #f1f0ec; color: #141414; }
-  .code-head .copy-btn { display: none; }
-  .panel textarea { display: none; height: 130px; }
-  .panel.show-code textarea { display: block; }
+  .mode { bottom: auto; top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); }
+  .mode button { padding: 13px 17px; }
 }
+</style

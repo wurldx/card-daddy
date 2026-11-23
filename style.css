@@ -1,8 +1,8 @@
 /* The composition lives on a fixed 1645 x 956 stage (the reference image's size)
    and is scaled to cover the hero, so every card keeps its exact position. */
 :root { --bg: #fff; --stage-w: 1645; --stage-h: 1055; --rim: 7px; --radius: 32px; }
-html, body { height: 100%; margin: 0; background: var(--bg); }
-.hero { touch-action: pan-y; cursor: grab; user-select: none; -webkit-user-select: none; position: relative; height: 100svh; min-height: 420px; overflow: clip; background: var(--bg); }
+html, body { height: 100%; margin: 0; background: var(--bg); overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
+.hero { touch-action: pan-y; cursor: grab; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; position: relative; height: 100vh; height: 100svh; min-height: 320px; overflow: clip; background: var(--bg); }
 .stage {
   position: absolute; left: 0; top: 0;
   width: calc(var(--stage-w) * 1px); height: calc(var(--stage-h) * 1px);
@@ -47,6 +47,11 @@ html, body { height: 100%; margin: 0; background: var(--bg); }
 }
 .mode button[aria-pressed="true"] { background: #141414; color: #fff; }
 .mode button:focus-visible { outline: 2px solid #141414; outline-offset: 2px; }
+/* Phones: toggle moves to the top (clear of the browser's bottom bar and your thumb), with bigger tap targets */
+@media (max-width: 560px) {
+  .mode { bottom: auto; top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); }
+  .mode button { padding: 13px 17px; }
+}
 
 /* ---- Demo controls (these are not part of the exported code) ---- */
 .panel {
@@ -95,7 +100,13 @@ html, body { height: 100%; margin: 0; background: var(--bg); }
 }
 .panel textarea:focus-visible { outline: 2px solid #141414; outline-offset: 2px; }
 @media (max-width: 560px) {
-  .panel { top: auto; bottom: max(12px, env(safe-area-inset-bottom)); left: 12px; width: calc(100vw - 24px); }
-  .panel textarea { height: 110px; }
-  .mode { bottom: auto; top: max(12px, env(safe-area-inset-top)); right: 12px; }
+  .panel { top: auto; left: 0; right: 0; bottom: 0; width: auto; max-height: 72vh; max-height: 72svh; overflow-y: auto; overscroll-behavior: contain;
+    border-radius: 22px 22px 0 0; border-bottom: 0; font-size: 12px;
+    padding: 10px max(18px, env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+  }
+  .head-copy { display: inline-block !important; }
+  .code-toggle { display: inline-block !important; background: #f1f0ec; color: #141414; }
+  .code-head .copy-btn { display: none; }
+  .panel textarea { display: none; height: 130px; }
+  .panel.show-code textarea { display: block; }
 }

@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
 <title>Floating Card Hero</title>
 <link rel="stylesheet" href="style.css">
-
 </head>
 <body>
 <!-- Replace each <img src> below with your own image (about 4:3). Card shape, position and perspective are set by the CSS. -->
@@ -36,7 +36,10 @@
 <aside class="panel" id="panel" aria-label="Hero controls">
   <div class="panel-head">
     <span class="lab">Controls</span>
-    <button type="button" class="fold" id="fold" aria-expanded="true" aria-label="Collapse controls">&minus;</button>
+    <span class="head-actions">
+      <button type="button" class="copy-btn head-copy">Copy code</button>
+      <button type="button" class="fold" id="fold" aria-expanded="true" aria-label="Collapse controls">&minus;</button>
+    </span>
   </div>
   <div class="panel-body">
     <label class="row">
@@ -57,7 +60,10 @@
     </label>
     <div class="code-head">
       <span class="lab">Code <small id="codeSize"></small></span>
-      <button type="button" id="copy">Copy code</button>
+      <span class="head-actions">
+        <button type="button" class="code-toggle" id="codeToggle" aria-expanded="false">Show code</button>
+        <button type="button" class="copy-btn">Copy code</button>
+      </span>
     </div>
     <textarea id="code" readonly spellcheck="false" wrap="off" aria-label="Full page code"></textarea>
   </div>
@@ -66,5 +72,3 @@
 <script src="script.js"></script>
 </body>
 </html>
-
-

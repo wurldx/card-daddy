@@ -18,6 +18,7 @@ const BLUR = 0.5;
 const BLUR_MAX = 12;               // blur at BLUR = 1, in px on a full-size card (it shrinks with the card)
 const SPEED = 0.1;                  // drift speed, in card spacings per second at 4 cards (lower = slower)
 const SW = 1645, SH = 1055;         // stage size (the page frame in the CD reference picture)
+const PHONE_FIT = 0.0012;           // portrait screens: zoom so the middle card fills about 3/4 of the width (stage px per screen px)
 
 const hero = document.querySelector('.hero');
 const stage = document.getElementById('stage');
@@ -68,7 +69,7 @@ function matrixFor(q, w, h) {       // flat w x h box -> quad, as CSS matrix3d
   const g = (sx * dy2 - dx2 * sy) / den, k = (dx1 * sy - sx * dy1) / den;
   const a = x1 - x0 + g * x1, b = x3 - x0 + k * x3;
   const d = y1 - y0 + g * y1, e = y3 - y0 + k * y3;
-  return `matrix3d(${a/w},${d/w},0,${g/w},${b/h},${e/h},0,${k/h},0,0,1,0,${x0},${y0},0,1)`;
+  return matrix3d(,,0,,,,0,,0,0,1,0,,,0,1);
 }
 
 /* ---- Cards ----
@@ -95,7 +96,9 @@ function release(n, c) { c.style.display = 'none'; free[c._i].push(c); live.dele
 let p = 0;                          // scroll position, in card spacings
 let ease = 1, vel = 0;              // auto-speed easing, drag momentum (spacings / s)
 let hovering = false, dragging = false, lastT = 0, k = 1, appliedScale = 0, appliedSpot = -1;
+let lite = false, onScreen = true;     // lite = phones and touch screens: lighter effects, fewer cards
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+const touchScreen = matchMedia('(pointer: coarse)');
 const DIR = [0.952, -0.308], SLOT_LEN = 740;   // travel direction and card spacing at 4 cards (stage px)
 
 /* Which part of the path is on screen? Found by testing real card positions, so the row of
@@ -144,15 +147,18 @@ function render() {
     // one card spacing away. It drives the lift, the shadow, the dimming of the others, and the turn upright.
     const t = Math.min(1, Math.max(0, 1 - Math.abs(u - 2) / s) * 1.6), w = t * t * (3 - 2 * t) * cur.spot, dim = cur.spot - w;
     const q = uprightBlend(pathQuad(u), w);
-    const blur = cur.blur * BLUR_MAX * (1 - t * t * (3 - 2 * t));   // sharp in the middle, softer the further from it
+    const blur = cur.blur * (lite ? BLUR_MAX * 0.6 : BLUR_MAX) * (1 - t * t * (3 - 2 * t));   // sharp in the middle, softer the further from it (lighter on phones)
     c.style.transform = matrixFor(shift(q, 0, 0, s * (1 + 0.07 * w)), size[c._i].w, size[c._i].h);
-    c.style.filter = `brightness(${(1 - 0.18 * dim).toFixed(3)}) saturate(${(1 - 0.35 * dim).toFixed(3)}) ` +
-      `drop-shadow(0 ${(10 + 20 * w).toFixed(2)}px ${(12 + 24 * w).toFixed(2)}px rgba(0,0,0,${(0.16 + 0.12 * w).toFixed(3)}))` +
-      (blur > 0.02 ? ` blur(${blur.toFixed(2)}px)` : '');
-    // Stacking matches the reference: the far-left card sits over the second card and the
-    // right card sits over the centre one. Distance from the middle decides the order, so
-    // overlapping neighbours never swap places while moving.
-    c.style.zIndex = Math.round(Math.abs(u - 1.5) * 1000) * 2 + (u > 1.5 ? 1 : 0);
+    c.style.filter = rightness() saturate()  +
+      (lite ? drop-shadow(0 px px rgba(0,0,0,))    // smaller, cheaper shadow on phones
+            : drop-shadow(0 px px rgba(0,0,0,))) +
+      (blur > 0.02 ?  blur(px) : '');
+    // Stacking: the reference order (outer cards over inner ones, by distance from the middle) plus a big
+    // bonus for the card that owns the spotlight, so it stays on top of both neighbours. The bonus is centred
+    // a little past the middle and fades out over a bit more than one card spacing, which puts every
+    // front/back swap at a moment when the two cards are not touching, so you never see one happen.
+    const x = Math.max(0, 1 - Math.abs(u - (2 + 0.3 * s)) / (1.3 * s));
+    c.style.zIndex = Math.round(Math.abs(u - 1.5) * 1000) * 2 + (u > 1.5 ? 1 : 0) + Math.round(100000 * x * x * (3 - 2 * x));
   }
 }
 
@@ -168,12 +174,14 @@ const easeOut = x => 1 - Math.pow(1 - x, 4);    // fast start, soft landing
 const startStep = (to, dur) => { anim = { from: p, to, t: 0, dur }; };
 
 function frame(now) {
+  if (!onScreen || document.hidden) { lastT = now; requestAnimationFrame(frame); return; }   // nothing to draw: save battery
   const dt = Math.min((now - lastT) / 1000 || 0, 0.05);
   lastT = now;
   const f = 1 - Math.exp(-dt * 8);                       // smooth, frame-rate independent glide to new settings
-  for (const key of ['count', 'scale', 'spot', 'blur']) {
-    const d = want[key] - cur[key];
-    cur[key] = Math.abs(d) < 0.0005 ? want[key] : cur[key] + d * f;
+  const goal = { count: Math.min(want.count, lite ? 8 : 16), scale: want.scale, spot: want.spot, blur: want.blur };   // phones show at most 8 cards
+  for (const key in goal) {
+    const d = goal[key] - cur[key];
+    cur[key] = Math.abs(d) < 0.0005 ? goal[key] : cur[key] + d * f;
   }
   if (cur.scale !== appliedScale) fit();
   if (cur.spot !== appliedSpot) { appliedSpot = cur.spot; hero.style.setProperty('--spot', cur.spot); }
@@ -203,16 +211,22 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 
-/* ---- Fit the stage to the hero (cover) ---- */
+/* ---- Fit the stage to the hero ----
+   Wide screens: the stage covers the hero. Portrait screens (phones): covering would crop the
+   picture down to one card, so instead the stage is zoomed out until the middle card fills about
+   3/4 of the width, with its neighbours peeking in along the diagonal. */
 function fit() {
   const w = hero.clientWidth, h = hero.clientHeight;
+  if (!w || !h) return;                                  // hidden (display: none): nothing to fit
   appliedScale = cur.scale;
-  k = Math.max(w / SW, h / SH) * cur.scale;
+  lite = touchScreen.matches || w < 700;
+  k = (h > w * 1.15 ? w * PHONE_FIT : Math.max(w / SW, h / SH)) * cur.scale;
   stage.style.setProperty('--k', k);
   stage.style.setProperty('--tx', (w - SW * k) / 2 + 'px');
   stage.style.setProperty('--ty', (h - SH * k) / 2 + 'px');
 }
 new ResizeObserver(fit).observe(hero);
+if ('IntersectionObserver' in window) new IntersectionObserver(e => { onScreen = e[e.length - 1].isIntersecting; }).observe(hero);
 fit();
 
 /* ---- Drag with mouse or touch (momentum on release) ---- */
@@ -241,7 +255,7 @@ function endDrag(e) {
 }
 hero.addEventListener('pointerup', endDrag);
 hero.addEventListener('pointercancel', endDrag);
-hero.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') hovering = true; });
+hero.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse' && !lite) hovering = true; });   // hover-to-pause is a desktop thing
 hero.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') hovering = false; });
 
 /* ---- Graceful / Snappy toggle ---- */
@@ -257,82 +271,3 @@ setMode(mode, false);
 
 render();
 requestAnimationFrame(frame);
-
-/* ---- Demo controls: sliders + live code. Not part of the exported code. ---- */
-(() => {
-  const $ = id => document.getElementById(id);
-  const panel = $('panel'), countIn = $('count'), sizeIn = $('size'), spotIn = $('spot'), blurIn = $('blur'), countOut = $('countOut'), sizeOut = $('sizeOut'), spotOut = $('spotOut'), blurOut = $('blurOut');
-  const codeEl = $('code'), codeSize = $('codeSize'), copyBtn = $('copy'), fold = $('fold');
-  const src = window.__heroSrc;
-  let sourcePromise;
-
-  async function getSources() {
-    if (!sourcePromise) {
-      sourcePromise = Promise.all([
-        fetch('script.js').then(response => response.ok ? response.text() : Promise.reject(new Error('Could not load script.js'))),
-        fetch('style.css').then(response => response.ok ? response.text() : Promise.reject(new Error('Could not load style.css')))
-      ]);
-    }
-    return sourcePromise;
-  }
-
-  /* The full page, with the two settings written into the script. */
-  async function buildCode() {
-    const count = +countIn.value, scale = Number((sizeIn.value / 100).toFixed(2)), spot = Number((spotIn.value / 100).toFixed(2)), blur = Number((blurIn.value / 100).toFixed(2));
-    const [source, stylesheet] = await getSources();
-    const js = source
-      .split('/* ---- Demo controls')[0]
-      .replace(/const COUNT = [\d.]+;/, 'const COUNT = ' + count + ';')
-      .replace(/const SCALE = [\d.]+;/, 'const SCALE = ' + scale + ';')
-      .replace(/const SPOT = [\d.]+;/, 'const SPOT = ' + spot + ';')
-      .replace(/const BLUR = [\d.]+;/, 'const BLUR = ' + blur + ';');
-    const css = stylesheet.split('/* ---- Demo controls')[0];
-    return '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n' +
-      '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n' +
-      '<title>Floating Card Hero</title>\n<style>' + css + '</style>\n</head>\n<body>\n' +
-      '<!-- Replace each <img src> below with your own image (about 4:3). Card shape, position and perspective are set by the CSS. -->\n' +
-      '<section class="hero" aria-label="Featured work">\n  <div class="stage" id="stage">' + src.cards + '</div>\n</section>\n' +
-      src.mode + '\n<script>' + js + '<\/script>\n</body>\n</html>\n';
-  }
-
-  let queued = false;
-  async function showCode() {
-    queued = false;
-    const code = await buildCode();
-    codeEl.value = code;
-    codeSize.textContent = '\u00b7 ' + (new Blob([code]).size / 1024).toFixed(1) + ' KB';
-  }
-  function sync() {
-    window.heroControls.set(+countIn.value, sizeIn.value / 100, spotIn.value / 100, blurIn.value / 100);
-    countOut.textContent = countIn.value;
-    sizeOut.textContent = sizeIn.value + '%';
-    spotOut.textContent = spotIn.value + '%';
-    blurOut.textContent = blurIn.value + '%';
-    [countIn, sizeIn, spotIn, blurIn].forEach(el => el.style.setProperty('--pct', (el.value - el.min) / (el.max - el.min) * 100 + '%'));
-    if (!queued) { queued = true; requestAnimationFrame(showCode); }   // one rebuild per frame, however fast the slider moves
-  }
-  [countIn, sizeIn, spotIn, blurIn].forEach(el => el.addEventListener('input', sync));
-  sync();
-
-  let timer;
-  copyBtn.addEventListener('click', async () => {
-    const code = codeEl.value;
-    let ok = false;
-    try { await navigator.clipboard.writeText(code); ok = true; } catch (_) {}
-    if (!ok) {                                          // clipboard API blocked (e.g. inside a frame): use the old route
-      codeEl.focus(); codeEl.select();
-      try { ok = document.execCommand('copy'); } catch (_) {}
-      if (ok) { codeEl.setSelectionRange(0, 0); codeEl.blur(); }
-    }
-    copyBtn.textContent = ok ? 'Copied' : 'Press Ctrl+C';
-    clearTimeout(timer);
-    timer = setTimeout(() => { copyBtn.textContent = 'Copy code'; }, 1800);
-  });
-
-  fold.addEventListener('click', () => {
-    const closed = panel.classList.toggle('is-collapsed');
-    fold.setAttribute('aria-expanded', String(!closed));
-    fold.setAttribute('aria-label', closed ? 'Expand controls' : 'Collapse controls');
-    fold.innerHTML = closed ? '+' : '&minus;';
-  });
-})();

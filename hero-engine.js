@@ -185,7 +185,6 @@ function release(node, card) {
 let position = 0; // scroll position, in card spacings
 let driftEase = 1;
 let velocity = 0; // drag momentum, in spacings per second
-let hovering = false;
 let dragging = false;
 let lastT = 0;
 let stageScale = 1;
@@ -401,7 +400,7 @@ function frame(now) {
           snappyAnimation = null;
           snappyHoldTime = 0;
         }
-      } else if (!hovering && !reduceMotion.matches) {
+      } else if (!reduceMotion.matches) {
         snappyHoldTime += dt;
         if (snappyHoldTime >= SNAPPY.hold) {
           const base = Math.round(position);
@@ -409,7 +408,7 @@ function frame(now) {
         }
       }
     } else {
-      const target = (hovering || reduceMotion.matches) ? 0 : 1;
+      const target = reduceMotion.matches ? 0 : 1;
       driftEase += (target - driftEase) * Math.min(1, dt * 5);
       position += (-SPEED * currentSettings.speed / s * driftEase + velocity) * dt;
       velocity *= Math.exp(-dt * 3.2);
@@ -504,16 +503,6 @@ function endDrag(e) {
 
 hero.addEventListener('pointerup', endDrag);
 hero.addEventListener('pointercancel', endDrag);
-hero.addEventListener('pointerenter', e => {
-  if (e.pointerType === 'mouse' && !lite) {
-    hovering = true;
-  }
-});
-hero.addEventListener('pointerleave', e => {
-  if (e.pointerType === 'mouse') {
-    hovering = false;
-  }
-});
 
 /* ---- Graceful / Snappy mode selection ---- */
 function setMode(modeName, persist) {
